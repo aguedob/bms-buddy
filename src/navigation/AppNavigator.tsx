@@ -1,27 +1,29 @@
 import React from 'react';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { DashboardScreen, CellsScreen, SettingsScreen } from '../screens';
-import theme from '../theme';
+import { useTheme } from '../theme';
 
 const Tab = createBottomTabNavigator();
 
-const navigationTheme = {
-  ...DefaultTheme,
-  dark: true,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: theme.colors.primary,
-    background: theme.colors.background,
-    card: theme.colors.surface,
-    text: theme.colors.text,
-    border: theme.colors.border,
-    notification: theme.colors.error,
-  },
-};
-
 export const AppNavigator: React.FC = () => {
+  const { theme, isDark } = useTheme();
+  
+  const navigationTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    dark: isDark,
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: theme.colors.primary,
+      background: theme.colors.background,
+      card: theme.colors.surface,
+      text: theme.colors.text,
+      border: theme.colors.border,
+      notification: theme.colors.error,
+    },
+  };
+
   return (
     <NavigationContainer theme={navigationTheme}>
       <Tab.Navigator

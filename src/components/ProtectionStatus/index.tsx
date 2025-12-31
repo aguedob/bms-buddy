@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import theme from '../../theme';
+import { useTheme, Theme } from '../../theme';
 import { ProtectionStatus } from '../../types/bms';
 import { hasActiveProtection, getActiveProtections } from '../../utils/bmsParser';
 
@@ -16,6 +16,8 @@ export const ProtectionStatusCard: React.FC<ProtectionStatusProps> = ({
   chargeMosEnabled,
   dischargeMosEnabled,
 }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const hasProtection = hasActiveProtection(status);
   const activeProtections = getActiveProtections(status);
 
@@ -151,6 +153,9 @@ interface ProtectionItemProps {
 }
 
 const ProtectionItem: React.FC<ProtectionItemProps> = ({ label, active, description }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
     <TouchableOpacity style={styles.protectionGridItem}>
       <View
@@ -164,7 +169,7 @@ const ProtectionItem: React.FC<ProtectionItemProps> = ({ label, active, descript
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
-import theme from '../../theme';
+import { useTheme, Theme } from '../../theme';
 
 interface TemperatureGaugeProps {
   temperature: number;
@@ -14,6 +14,9 @@ export const TemperatureGauge: React.FC<TemperatureGaugeProps> = ({
   label = 'Temperature',
   size = 80,
 }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   // Temperature range: -20°C to 60°C
   const minTemp = -20;
   const maxTemp = 60;
@@ -46,6 +49,8 @@ interface TemperatureListProps {
 }
 
 export const TemperatureList: React.FC<TemperatureListProps> = ({ temperatures }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const labels = ['BMS', 'Cell 1', 'Cell 2', 'Cell 3', 'Cell 4', 'Ambient'];
   
   return (
@@ -65,7 +70,7 @@ export const TemperatureList: React.FC<TemperatureListProps> = ({ temperatures }
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     alignItems: 'center',
     margin: theme.spacing.sm,

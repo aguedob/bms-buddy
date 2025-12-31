@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,11 +9,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useBMS } from '../context/BMSContext';
 import { CellVoltageGrid } from '../components';
-import theme from '../theme';
+import { useTheme, Theme } from '../theme';
 import { LIFEPO4_CELL_VOLTAGES } from '../constants/bms';
 
 export const CellsScreen: React.FC = () => {
   const { bmsData, connectionStatus } = useBMS();
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { basicInfo, cellInfo } = bmsData;
 
   if (connectionStatus !== 'connected' || !cellInfo || !basicInfo) {
@@ -122,7 +124,7 @@ export const CellsScreen: React.FC = () => {
           {cellInfo.cellVoltages.map((voltage, index) => {
             const deviation = voltage - cellInfo.averageVoltage;
             const isBalancingCell = (basicInfo.balanceStatus & (1 << index)) !== 0;
-            const status = getCellStatus(voltage);
+            const status = getCellStatus(voltage, theme);
             
             return (
               <View key={index} style={styles.tableRow}>
@@ -183,7 +185,7 @@ export const CellsScreen: React.FC = () => {
   );
 };
 
-function getCellStatus(voltage: number): { status: string; color: string } {
+function getCellStatus(voltage: number, theme: Theme): { status: string; color: string } {
   if (voltage >= LIFEPO4_CELL_VOLTAGES.HIGH) {
     return { status: 'High', color: theme.colors.warning };
   }
@@ -196,7 +198,7 @@ function getCellStatus(voltage: number): { status: string; color: string } {
   return { status: 'OK', color: theme.colors.batteryMedium };
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

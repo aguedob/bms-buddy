@@ -4,7 +4,7 @@
     "slug": "battery-meter",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "backgroundColor": "#0d0d0d"
     },
@@ -12,9 +12,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.batteryMeter.app",
+      "userInterfaceStyle": "automatic",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to connect to your BMS and monitor battery status",
-        "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to connect to your BMS and monitor battery status"
+        "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to connect to your BMS and monitor battery status",
+        "UIUserInterfaceStyle": "Automatic"
       }
     },
     "android": {

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import theme from '../../theme';
+import { useTheme, Theme } from '../../theme';
 
 interface StatCardProps {
   label: string;
@@ -16,9 +16,13 @@ export const StatCard: React.FC<StatCardProps> = ({
   value,
   unit,
   icon,
-  color = theme.colors.primary,
+  color,
   subtitle,
 }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const valueColor = color || theme.colors.primary;
+
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -26,7 +30,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         <Text style={styles.label}>{label}</Text>
       </View>
       <View style={styles.valueContainer}>
-        <Text style={[styles.value, { color }]}>{value}</Text>
+        <Text style={[styles.value, { color: valueColor }]}>{value}</Text>
         {unit && <Text style={styles.unit}>{unit}</Text>}
       </View>
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
@@ -39,10 +43,12 @@ interface StatRowProps {
 }
 
 export const StatRow: React.FC<StatRowProps> = ({ children }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   return <View style={styles.row}>{children}</View>;
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: Theme) => StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: theme.colors.card,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,10 +11,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useBMS } from '../context/BMSContext';
-import theme from '../theme';
+import { useTheme, Theme, ThemeMode } from '../theme';
 import { ScannedDevice } from '../types/bms';
 
 export const SettingsScreen: React.FC = () => {
+  const { theme, themeMode, setThemeMode } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   const {
     connectionStatus,
     scannedDevices,
@@ -245,6 +248,46 @@ export const SettingsScreen: React.FC = () => {
         </View>
       </View>
 
+      {/* Appearance Settings */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Appearance</Text>
+        <View style={styles.settingsCard}>
+          <Text style={styles.settingLabel}>Theme</Text>
+          <Text style={styles.settingDescription}>
+            Choose your preferred color scheme
+          </Text>
+          <View style={styles.themeSelector}>
+            {(['system', 'light', 'dark'] as ThemeMode[]).map((mode) => (
+              <TouchableOpacity
+                key={mode}
+                style={[
+                  styles.themeButton,
+                  themeMode === mode && styles.themeButtonActive,
+                ]}
+                onPress={() => setThemeMode(mode)}
+              >
+                <Ionicons
+                  name={
+                    mode === 'system' ? 'phone-portrait-outline' :
+                    mode === 'light' ? 'sunny-outline' : 'moon-outline'
+                  }
+                  size={20}
+                  color={themeMode === mode ? (theme.isDark ? theme.colors.text : '#ffffff') : theme.colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.themeButtonText,
+                    themeMode === mode && styles.themeButtonTextActive,
+                  ]}
+                >
+                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </View>
+
       {/* About Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
@@ -279,7 +322,7 @@ export const SettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -499,7 +542,34 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   intervalButtonTextActive: {
-    color: theme.colors.text,
+    color: theme.isDark ? theme.colors.text : '#ffffff',
+    fontWeight: theme.fontWeight.medium,
+  },
+  themeSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: theme.spacing.md,
+  },
+  themeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.sm,
+    marginHorizontal: theme.spacing.xs,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.sm,
+  },
+  themeButtonActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  themeButtonText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginLeft: theme.spacing.xs,
+  },
+  themeButtonTextActive: {
+    color: theme.isDark ? theme.colors.text : '#ffffff',
     fontWeight: theme.fontWeight.medium,
   },
   aboutCard: {

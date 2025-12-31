@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import Svg, { Circle, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import theme from '../../theme';
+import { useTheme, Theme } from '../../theme';
 
 interface BatteryGaugeProps {
   percentage: number;
@@ -16,6 +16,9 @@ export const BatteryGauge: React.FC<BatteryGaugeProps> = ({
   current,
   size = 220,
 }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   const strokeWidth = 12;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -112,7 +115,7 @@ export const BatteryGauge: React.FC<BatteryGaugeProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',

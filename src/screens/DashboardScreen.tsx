@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,9 +18,12 @@ import {
   ProtectionStatusCard,
   TemperatureList,
 } from '../components';
-import theme from '../theme';
+import { useTheme, Theme } from '../theme';
 
 export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  
   const {
     connectionStatus,
     connectedDevice,
@@ -250,7 +253,7 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -288,7 +291,7 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xl,
   },
   connectButtonText: {
-    color: theme.colors.text,
+    color: theme.isDark ? theme.colors.text : '#ffffff',
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
     marginLeft: theme.spacing.sm,

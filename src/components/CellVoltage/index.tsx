@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import theme from '../../theme';
+import { useTheme, Theme } from '../../theme';
 import { LIFEPO4_CELL_VOLTAGES } from '../../constants/bms';
 
 interface CellVoltageBarProps {
@@ -18,6 +18,9 @@ export const CellVoltageBar: React.FC<CellVoltageBarProps> = ({
   isHighest = false,
   isLowest = false,
 }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   // Calculate percentage within LiFePO4 range
   const minV = LIFEPO4_CELL_VOLTAGES.EMPTY;
   const maxV = LIFEPO4_CELL_VOLTAGES.FULL;
@@ -93,6 +96,9 @@ export const CellVoltageGrid: React.FC<CellVoltageGridProps> = ({
   maxVoltageCell,
   minVoltageCell,
 }) => {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
     <View style={styles.grid}>
       {cellVoltages.map((voltage, index) => (
@@ -109,7 +115,7 @@ export const CellVoltageGrid: React.FC<CellVoltageGridProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     marginBottom: theme.spacing.md,
   },
@@ -141,7 +147,7 @@ const styles = StyleSheet.create({
   },
   balancingText: {
     fontSize: theme.fontSize.xs,
-    color: theme.colors.background,
+    color: theme.isDark ? theme.colors.background : '#ffffff',
     fontWeight: theme.fontWeight.bold,
   },
   badge: {
