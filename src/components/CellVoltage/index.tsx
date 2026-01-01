@@ -74,10 +74,6 @@ export const CellVoltageBar: React.FC<CellVoltageBarProps> = ({
             ]}
           />
         </View>
-        {/* Marker lines for reference voltages */}
-        <View style={[styles.marker, { left: '0%' }]} />
-        <View style={[styles.marker, { left: `${((LIFEPO4_CELL_VOLTAGES.NOMINAL - minV) / (maxV - minV)) * 100}%` }]} />
-        <View style={[styles.marker, { left: '100%' }]} />
       </View>
     </View>
   );
@@ -174,14 +170,6 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   barFill: {
     height: '100%',
     borderRadius: theme.borderRadius.sm,
-  },
-  marker: {
-    position: 'absolute',
-    top: 0,
-    width: 1,
-    height: 20,
-    backgroundColor: theme.colors.textMuted,
-    opacity: 0.3,
   },
   grid: {
     gap: theme.spacing.sm,

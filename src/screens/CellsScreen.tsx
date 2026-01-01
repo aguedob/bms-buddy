@@ -6,26 +6,38 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useBMS } from '../context/BMSContext';
-import { CellVoltageGrid } from '../components';
+import { CellVoltageGrid, CustomHeader } from '../components';
 import { useTheme, Theme } from '../theme';
+import { useI18n } from '../i18n';
 import { LIFEPO4_CELL_VOLTAGES } from '../constants/bms';
 
 export const CellsScreen: React.FC = () => {
   const { bmsData, connectionStatus } = useBMS();
   const { theme } = useTheme();
+  const { t } = useI18n();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { basicInfo, cellInfo } = bmsData;
 
   if (connectionStatus !== 'connected' || !cellInfo || !basicInfo) {
     return (
-      <View style={styles.emptyContainer}>
-        <Ionicons name="grid-outline" size={64} color={theme.colors.textMuted} />
-        <Text style={styles.emptyText}>No Cell Data</Text>
-        <Text style={styles.emptySubtext}>
-          Connect to your BMS to view cell information
-        </Text>
+      <View style={styles.screenContainer}>
+        <CustomHeader
+          title={t.cells.cellVoltages}
+          subtitle={t.cells.monitorCells}
+          icon="grid"
+          iconColor={theme.colors.secondary}
+        />
+        <View style={styles.emptyContainer}>
+          <Ionicons name="grid-outline" size={64} color={theme.colors.textMuted} />
+          <Text style={styles.emptyText}>{t.cells.noCellData}</Text>
+          <Text style={styles.emptySubtext}>
+            {t.cells.connectToView}
+          </Text>
+        </View>
       </View>
     );
   }
@@ -45,26 +57,33 @@ export const CellsScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.screenContainer}>
+      <CustomHeader
+        title={t.cells.cellVoltages}
+        subtitle={`${basicInfo.cellCount}S • Δ ${(cellInfo.voltageDelta * 1000).toFixed(0)}mV`}
+        icon="grid"
+        iconColor={theme.colors.secondary}
+      />
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 100 + insets.bottom }]}>
       {/* Summary Card */}
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Cell Summary</Text>
+        <Text style={styles.summaryTitle}>{t.cells.cellSummary}</Text>
         
         <View style={styles.summaryGrid}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Cells</Text>
+            <Text style={styles.summaryLabel}>{t.cells.cells}</Text>
             <Text style={styles.summaryValue}>{basicInfo.cellCount}S</Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Total</Text>
+            <Text style={styles.summaryLabel}>{t.cells.total}</Text>
             <Text style={styles.summaryValue}>{basicInfo.totalVoltage.toFixed(2)} V</Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Average</Text>
+            <Text style={styles.summaryLabel}>{t.cells.average}</Text>
             <Text style={styles.summaryValue}>{cellInfo.averageVoltage.toFixed(3)} V</Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Delta</Text>
+            <Text style={styles.summaryLabel}>{t.cells.delta}</Text>
             <Text style={[
               styles.summaryValue,
               { color: cellInfo.voltageDelta > 0.05 ? theme.colors.warning : theme.colors.success }
@@ -86,12 +105,12 @@ export const CellsScreen: React.FC = () => {
               styles.balanceText,
               { color: isBalancing ? theme.colors.warning : theme.colors.success }
             ]}>
-              {isBalancing ? 'Balancing Active' : 'Cells Balanced'}
+              {isBalancing ? t.cells.balancingActive : t.cells.cellsBalanced}
             </Text>
           </View>
           {isBalancing && balancingCells.length > 0 && (
             <Text style={styles.balancingCells}>
-              Balancing cells: {balancingCells.join(', ')}
+              {t.cells.balancingCells}: {balancingCells.join(', ')}
             </Text>
           )}
         </View>
@@ -99,7 +118,7 @@ export const CellsScreen: React.FC = () => {
 
       {/* Cell Voltages */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Cell Voltages</Text>
+        <Text style={styles.sectionTitle}>{t.cells.cellVoltages}</Text>
         <View style={styles.card}>
           <CellVoltageGrid
             cellVoltages={cellInfo.cellVoltages}
@@ -112,13 +131,13 @@ export const CellsScreen: React.FC = () => {
 
       {/* Cell Details Table */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Detailed View</Text>
+        <Text style={styles.sectionTitle}>{t.cells.detailedView}</Text>
         <View style={styles.card}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, styles.cellColumn]}>Cell</Text>
-            <Text style={[styles.tableHeaderText, styles.voltageColumn]}>Voltage</Text>
-            <Text style={[styles.tableHeaderText, styles.deviationColumn]}>Deviation</Text>
-            <Text style={[styles.tableHeaderText, styles.statusColumn]}>Status</Text>
+            <Text style={[styles.tableHeaderText, styles.cellColumn]}>{t.cells.cell}</Text>
+            <Text style={[styles.tableHeaderText, styles.voltageColumn]}>{t.cells.voltage}</Text>
+            <Text style={[styles.tableHeaderText, styles.deviationColumn]}>{t.cells.deviation}</Text>
+            <Text style={[styles.tableHeaderText, styles.statusColumn]}>{t.cells.status}</Text>
           </View>
           
           {cellInfo.cellVoltages.map((voltage, index) => {
@@ -157,31 +176,32 @@ export const CellsScreen: React.FC = () => {
 
       {/* Reference Voltages */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>LiFePO4 Reference</Text>
+        <Text style={styles.sectionTitle}>{t.cells.lifePo4Reference}</Text>
         <View style={styles.card}>
           <View style={styles.referenceItem}>
-            <Text style={styles.referenceLabel}>Full Charge</Text>
+            <Text style={styles.referenceLabel}>{t.cells.fullCharge}</Text>
             <Text style={styles.referenceValue}>{LIFEPO4_CELL_VOLTAGES.FULL} V</Text>
           </View>
           <View style={styles.referenceItem}>
-            <Text style={styles.referenceLabel}>Nominal</Text>
+            <Text style={styles.referenceLabel}>{t.cells.nominal}</Text>
             <Text style={styles.referenceValue}>{LIFEPO4_CELL_VOLTAGES.NOMINAL} V</Text>
           </View>
           <View style={styles.referenceItem}>
-            <Text style={styles.referenceLabel}>Empty</Text>
+            <Text style={styles.referenceLabel}>{t.cells.empty}</Text>
             <Text style={styles.referenceValue}>{LIFEPO4_CELL_VOLTAGES.EMPTY} V</Text>
           </View>
           <View style={styles.referenceItem}>
-            <Text style={[styles.referenceLabel, { color: theme.colors.warning }]}>High Warning</Text>
+            <Text style={[styles.referenceLabel, { color: theme.colors.warning }]}>{t.cells.highWarning}</Text>
             <Text style={[styles.referenceValue, { color: theme.colors.warning }]}>{LIFEPO4_CELL_VOLTAGES.HIGH} V</Text>
           </View>
           <View style={styles.referenceItem}>
-            <Text style={[styles.referenceLabel, { color: theme.colors.error }]}>Low Warning</Text>
+            <Text style={[styles.referenceLabel, { color: theme.colors.error }]}>{t.cells.lowWarning}</Text>
             <Text style={[styles.referenceValue, { color: theme.colors.error }]}>{LIFEPO4_CELL_VOLTAGES.LOW} V</Text>
           </View>
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 };
 
@@ -199,13 +219,16 @@ function getCellStatus(voltage: number, theme: Theme): { status: string; color: 
 }
 
 const createStyles = (theme: Theme) => StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
   content: {
     padding: theme.spacing.md,
-    paddingBottom: theme.spacing.xxl,
   },
   emptyContainer: {
     flex: 1,

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, Theme } from '../../theme';
+import { useI18n } from '../../i18n';
 import { ProtectionStatus } from '../../types/bms';
 import { hasActiveProtection, getActiveProtections } from '../../utils/bmsParser';
 
@@ -17,6 +18,7 @@ export const ProtectionStatusCard: React.FC<ProtectionStatusProps> = ({
   dischargeMosEnabled,
 }) => {
   const { theme } = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const hasProtection = hasActiveProtection(status);
   const activeProtections = getActiveProtections(status);
@@ -24,16 +26,16 @@ export const ProtectionStatusCard: React.FC<ProtectionStatusProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Protection Status</Text>
+        <Text style={styles.title}>{t.protection.protectionStatus}</Text>
         {hasProtection ? (
           <View style={[styles.statusBadge, styles.errorBadge]}>
-            <Ionicons name="warning" size={12} color={theme.colors.text} />
-            <Text style={styles.statusText}>Active</Text>
+            <Ionicons name="warning" size={12} color="#FFFFFF" />
+            <Text style={styles.statusText}>{t.protection.active}</Text>
           </View>
         ) : (
           <View style={[styles.statusBadge, styles.okBadge]}>
-            <Ionicons name="checkmark-circle" size={12} color={theme.colors.text} />
-            <Text style={styles.statusText}>OK</Text>
+            <Ionicons name="checkmark-circle" size={12} color="#FFFFFF" />
+            <Text style={styles.statusText}>{t.protection.ok}</Text>
           </View>
         )}
       </View>
@@ -47,9 +49,9 @@ export const ProtectionStatusCard: React.FC<ProtectionStatusProps> = ({
               { backgroundColor: chargeMosEnabled ? theme.colors.success : theme.colors.error },
             ]}
           />
-          <Text style={styles.mosLabel}>Charge MOS</Text>
+          <Text style={styles.mosLabel}>{t.protection.chargeMOS}</Text>
           <Text style={[styles.mosStatus, { color: chargeMosEnabled ? theme.colors.success : theme.colors.error }]}>
-            {chargeMosEnabled ? 'ON' : 'OFF'}
+            {chargeMosEnabled ? t.protection.on : t.protection.off}
           </Text>
         </View>
         <View style={styles.mosItem}>
@@ -59,9 +61,9 @@ export const ProtectionStatusCard: React.FC<ProtectionStatusProps> = ({
               { backgroundColor: dischargeMosEnabled ? theme.colors.success : theme.colors.error },
             ]}
           />
-          <Text style={styles.mosLabel}>Discharge MOS</Text>
+          <Text style={styles.mosLabel}>{t.protection.dischargeMOS}</Text>
           <Text style={[styles.mosStatus, { color: dischargeMosEnabled ? theme.colors.success : theme.colors.error }]}>
-            {dischargeMosEnabled ? 'ON' : 'OFF'}
+            {dischargeMosEnabled ? t.protection.on : t.protection.off}
           </Text>
         </View>
       </View>
@@ -69,7 +71,7 @@ export const ProtectionStatusCard: React.FC<ProtectionStatusProps> = ({
       {/* Active Protections */}
       {hasProtection && (
         <View style={styles.protectionList}>
-          <Text style={styles.protectionTitle}>Active Protections:</Text>
+          <Text style={styles.protectionTitle}>{t.protection.activeProtections}:</Text>
           {activeProtections.map((protection, index) => (
             <View key={index} style={styles.protectionItem}>
               <Ionicons name="alert-circle" size={14} color={theme.colors.error} />
@@ -200,7 +202,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.colors.error,
   },
   statusText: {
-    color: theme.colors.text,
+    color: '#FFFFFF',
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
     marginLeft: theme.spacing.xs,

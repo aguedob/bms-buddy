@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Battery Meter",
-    "slug": "battery-meter",
+    "name": "BMS Buddy",
+    "slug": "bms-buddy",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -11,7 +11,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.batteryMeter.app",
+      "bundleIdentifier": "com.bmsbuddy.app",
       "userInterfaceStyle": "automatic",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to connect to your BMS and monitor battery status",
@@ -23,7 +23,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#0d0d0d"
       },
-      "package": "com.batteryMeter.app",
+      "package": "com.bmsbuddy.app",
       "permissions": [
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_ADMIN",

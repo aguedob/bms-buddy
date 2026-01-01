@@ -1,4 +1,4 @@
-# Battery Meter - JBD/Xiaoxiang BMS Monitor
+# BMS Buddy - JBD/Xiaoxiang BMS Monitor
 
 A React Native app for monitoring LiFePO4 batteries managed by JBD/Xiaoxiang Smart BMS (Jiabaida) via Bluetooth.
 
@@ -39,7 +39,7 @@ This app supports **JBD/Jiabaida Smart BMS** devices with Bluetooth connectivity
 
 1. Clone or navigate to the project:
    ```bash
-   cd batteryMeter
+   cd bms-buddy
    ```
 
 2. Install dependencies:
@@ -141,7 +141,7 @@ This app implements the JBD/Xiaoxiang BMS UART/Bluetooth protocol:
 ## Project Structure
 
 ```
-batteryMeter/
+bms-buddy/
 ├── App.tsx                 # App entry point
 ├── src/
 │   ├── components/         # UI components

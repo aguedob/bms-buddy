@@ -12,14 +12,21 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useBMS } from '../context/BMSContext';
 import { useTheme, Theme, ThemeMode } from '../theme';
+import { useI18n, supportedLanguages, SupportedLanguage } from '../i18n';
+import { CustomHeader } from '../components';
+import { BuyMeCoffeeIcon } from '../components/icons/BuyMeCoffeeIcon';
 import { ScannedDevice } from '../types/bms';
 
 export const SettingsScreen: React.FC = () => {
   const { theme, themeMode, setThemeMode } = useTheme();
+  const { language, setLanguage, t } = useI18n();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
   
   const {
@@ -150,20 +157,27 @@ export const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.screenContainer}>
+      <CustomHeader
+        title={t.settings.settings}
+        subtitle={t.settings.connectionAndPreferences}
+        icon="settings"
+        iconColor={theme.colors.textSecondary}
+      />
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 100 + insets.bottom }]}>
       {/* Connection Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Bluetooth Connection</Text>
+        <Text style={styles.sectionTitle}>{t.settings.bluetoothConnection}</Text>
         
         {connectionStatus === 'connected' && connectedDevice ? (
           <View style={styles.connectedCard}>
             <View style={styles.connectedHeader}>
               <View style={styles.connectedStatus}>
                 <View style={styles.statusDot} />
-                <Text style={styles.connectedLabel}>Connected</Text>
+                <Text style={styles.connectedLabel}>{t.common.connected}</Text>
               </View>
               <TouchableOpacity onPress={handleDisconnect}>
-                <Text style={styles.disconnectText}>Disconnect</Text>
+                <Text style={styles.disconnectText}>{t.common.disconnect}</Text>
               </TouchableOpacity>
             </View>
             
@@ -184,11 +198,11 @@ export const SettingsScreen: React.FC = () => {
             {bmsData.basicInfo && (
               <View style={styles.deviceStats}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Firmware</Text>
+                  <Text style={styles.statLabel}>{t.settings.firmware}</Text>
                   <Text style={styles.statValue}>v{bmsData.basicInfo.softwareVersion}</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Cells</Text>
+                  <Text style={styles.statLabel}>{t.cells.cells}</Text>
                   <Text style={styles.statValue}>{bmsData.basicInfo.cellCount}S</Text>
                 </View>
                 <View style={styles.statItem}>
@@ -205,7 +219,7 @@ export const SettingsScreen: React.FC = () => {
                 <View style={styles.autoReconnectingContainer}>
                   <ActivityIndicator color={theme.colors.primary} size="large" />
                   <Text style={styles.autoReconnectingText}>
-                    Reconnecting to last device...
+                    {t.settings.reconnecting}
                   </Text>
                 </View>
               </>
@@ -219,23 +233,29 @@ export const SettingsScreen: React.FC = () => {
                   {isScanning ? (
                     <>
                       <ActivityIndicator color={theme.colors.text} size="small" />
-                      <Text style={styles.scanButtonText}>Scanning...</Text>
+                      <Text style={styles.scanButtonText}>
+                        {scannedDevices.length === 0 
+                          ? t.settings.scanning 
+                          : t.settings.bmsFound.replace('{{count}}', String(scannedDevices.length))}
+                      </Text>
                     </>
                   ) : connectionStatus === 'connecting' ? (
                     <>
                       <ActivityIndicator color={theme.colors.text} size="small" />
-                      <Text style={styles.scanButtonText}>Connecting...</Text>
+                      <Text style={styles.scanButtonText}>{t.common.connecting}</Text>
                     </>
                   ) : (
                     <>
                       <Ionicons name="bluetooth" size={20} color={theme.colors.text} />
-                      <Text style={styles.scanButtonText}>Scan for BMS</Text>
+                      <Text style={styles.scanButtonText}>{t.settings.scanForBMS}</Text>
                     </>
                   )}
                 </TouchableOpacity>
                 
                 <Text style={styles.scanHint}>
-                  Make sure your BMS is powered on and Bluetooth is enabled
+                  {isScanning && scannedDevices.length > 0 
+                    ? t.settings.tapToConnect
+                    : t.settings.scanHint}
                 </Text>
               </>
             )}
@@ -246,7 +266,7 @@ export const SettingsScreen: React.FC = () => {
       {/* Discovered Devices */}
       {scannedDevices.length > 0 && connectionStatus !== 'connected' && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Discovered Devices</Text>
+          <Text style={styles.sectionTitle}>{t.settings.discoveredDevices}</Text>
           <View style={styles.deviceList}>
             {scannedDevices.map(renderDeviceItem)}
           </View>
@@ -255,13 +275,13 @@ export const SettingsScreen: React.FC = () => {
 
       {/* Auto Refresh Settings */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Data Refresh</Text>
+        <Text style={styles.sectionTitle}>{t.settings.dataRefresh}</Text>
         <View style={styles.settingsCard}>
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Auto Refresh</Text>
+              <Text style={styles.settingLabel}>{t.settings.autoRefresh}</Text>
               <Text style={styles.settingDescription}>
-                Automatically update BMS data every {autoRefreshInterval / 1000}s
+                {t.settings.autoRefreshDescription.replace('{{seconds}}', String(autoRefreshInterval / 1000))}
               </Text>
             </View>
             <Switch
@@ -273,7 +293,7 @@ export const SettingsScreen: React.FC = () => {
           </View>
 
           <View style={styles.intervalSelector}>
-            <Text style={styles.intervalLabel}>Refresh Interval</Text>
+            <Text style={styles.intervalLabel}>{t.settings.refreshInterval}</Text>
             <View style={styles.intervalButtons}>
               {[1000, 2000, 5000, 10000].map((interval) => (
                 <TouchableOpacity
@@ -301,11 +321,11 @@ export const SettingsScreen: React.FC = () => {
 
       {/* Appearance Settings */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Appearance</Text>
+        <Text style={styles.sectionTitle}>{t.settings.appearance}</Text>
         <View style={styles.settingsCard}>
-          <Text style={styles.settingLabel}>Theme</Text>
+          <Text style={styles.settingLabel}>{t.settings.theme}</Text>
           <Text style={styles.settingDescription}>
-            Choose your preferred color scheme
+            {t.settings.themeDescription}
           </Text>
           <View style={styles.themeSelector}>
             {(['system', 'light', 'dark'] as ThemeMode[]).map((mode) => (
@@ -337,22 +357,48 @@ export const SettingsScreen: React.FC = () => {
             ))}
           </View>
         </View>
+
+        {/* Language Selector */}
+        <View style={[styles.settingsCard, { marginTop: theme.spacing.md }]}>
+          <Text style={styles.settingLabel}>{t.settings.language}</Text>
+          <View style={styles.themeSelector}>
+            {supportedLanguages.map((lang) => (
+              <TouchableOpacity
+                key={lang.code}
+                style={[
+                  styles.themeButton,
+                  language === lang.code && styles.themeButtonActive,
+                ]}
+                onPress={() => setLanguage(lang.code)}
+              >
+                <Text
+                  style={[
+                    styles.themeButtonText,
+                    language === lang.code && styles.themeButtonTextActive,
+                  ]}
+                >
+                  {lang.nativeName}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       </View>
 
       {/* About Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
+        <Text style={styles.sectionTitle}>{t.settings.about}</Text>
         <View style={styles.aboutCard}>
           <View style={styles.aboutRow}>
-            <Text style={styles.aboutLabel}>App Version</Text>
+            <Text style={styles.aboutLabel}>{t.settings.appVersion}</Text>
             <Text style={styles.aboutValue}>1.0.0</Text>
           </View>
           <View style={styles.aboutRow}>
-            <Text style={styles.aboutLabel}>BMS Protocol</Text>
+            <Text style={styles.aboutLabel}>{t.settings.bmsProtocol}</Text>
             <Text style={styles.aboutValue}>JBD/Xiaoxiang</Text>
           </View>
           <View style={styles.aboutRow}>
-            <Text style={styles.aboutLabel}>Battery Type</Text>
+            <Text style={styles.aboutLabel}>{t.settings.batteryType}</Text>
             <Text style={styles.aboutValue}>LiFePO4 4S</Text>
           </View>
         </View>
@@ -360,12 +406,57 @@ export const SettingsScreen: React.FC = () => {
 
       {/* Tips */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tips</Text>
+        <Text style={styles.sectionTitle}>{t.settings.tips}</Text>
         <View style={styles.tipCard}>
           <Ionicons name="information-circle" size={20} color={theme.colors.info} />
           <Text style={styles.tipText}>
-            The JBD Smart BMS should appear as "xiaoxiang" or similar in the device list. 
-            Make sure the BMS is active (battery voltage present) for successful connection.
+            {t.settings.tipText}
+          </Text>
+        </View>
+      </View>
+
+      {/* Support Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t.support.supportProject}</Text>
+        <View style={styles.supportCard}>
+          <Text style={styles.supportText}>
+            {t.support.supportDescription}
+          </Text>
+          
+          <TouchableOpacity
+            style={styles.coffeeButton}
+            onPress={() => Linking.openURL('https://buymeacoffee.com/aguedob')}
+            activeOpacity={0.8}
+          >
+            <BuyMeCoffeeIcon size={20} color="#000000" />
+            <Text style={styles.coffeeButtonText}>{t.support.buyMeCoffee}</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.githubButton}
+            onPress={() => Linking.openURL('https://github.com/aguedob/bms-buddy')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="logo-github" size={20} color={theme.colors.text} />
+            <Text style={styles.githubButtonText}>{t.support.viewOnGitHub}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.rateButton}
+            onPress={() => {
+              const storeUrl = Platform.OS === 'ios'
+                ? 'https://apps.apple.com/app/bms-buddy/id123456789'
+                : 'https://play.google.com/store/apps/details?id=com.bmsbuddy';
+              Linking.openURL(storeUrl);
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="star" size={20} color="#FFD700" />
+            <Text style={styles.rateButtonText}>{t.support.rateApp}</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.supportFooter}>
+            {t.support.supportFooter}
           </Text>
         </View>
       </View>
@@ -382,15 +473,15 @@ export const SettingsScreen: React.FC = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Rename Battery</Text>
+              <Text style={styles.modalTitle}>{t.settings.renameBattery}</Text>
               <Text style={styles.modalSubtitle}>
-                Enter a name for your battery (max 16 characters for BMS)
+                {t.settings.renameHint}
               </Text>
               <TextInput
                 style={styles.modalInput}
                 value={newBatteryName}
                 onChangeText={setNewBatteryName}
-                placeholder="e.g., Van Battery, Main Pack"
+                placeholder={t.settings.namePlaceholder}
                 placeholderTextColor={theme.colors.textMuted}
                 autoFocus
                 maxLength={16}
@@ -402,7 +493,7 @@ export const SettingsScreen: React.FC = () => {
               {isWritingName ? (
                 <View style={styles.writingContainer}>
                   <ActivityIndicator color={theme.colors.primary} />
-                  <Text style={styles.writingText}>Updating name...</Text>
+                  <Text style={styles.writingText}>{t.settings.updatingName}</Text>
                 </View>
               ) : (
                 <>
@@ -412,19 +503,19 @@ export const SettingsScreen: React.FC = () => {
                       onPress={handleCancelRename}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.modalButtonCancelText}>Cancel</Text>
+                      <Text style={styles.modalButtonCancelText}>{t.common.cancel}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                       style={[styles.modalButton, styles.modalButtonSave]}
                       onPress={handleSaveName}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.modalButtonSaveText}>Save</Text>
+                      <Text style={styles.modalButtonSaveText}>{t.common.save}</Text>
                     </TouchableOpacity>
                   </View>
                 
                   <Text style={styles.writeHint}>
-                    This will change the Bluetooth name visible to all apps.
+                    {t.settings.renameBluetoothHint}
                   </Text>
                 </>
               )}
@@ -433,17 +524,21 @@ export const SettingsScreen: React.FC = () => {
         </View>
       </Modal>
     </ScrollView>
+    </View>
   );
 };
 
 const createStyles = (theme: Theme) => StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
   content: {
     padding: theme.spacing.md,
-    paddingBottom: theme.spacing.xxl,
   },
   section: {
     marginBottom: theme.spacing.lg,
@@ -848,6 +943,79 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   clearNameText: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.error,
+  },
+  supportCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    alignItems: 'center',
+  },
+  supportText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: theme.spacing.md,
+  },
+  coffeeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFDD00',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+    width: '100%',
+  },
+  coffeeButtonText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: '#000000',
+    marginLeft: theme.spacing.sm,
+  },
+  githubButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: theme.spacing.md,
+    width: '100%',
+  },
+  githubButtonText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.text,
+    marginLeft: theme.spacing.sm,
+  },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: theme.spacing.md,
+    width: '100%',
+  },
+  rateButtonText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.text,
+    marginLeft: theme.spacing.sm,
+  },
+  supportFooter: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
   },
 });
 

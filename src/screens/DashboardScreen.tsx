@@ -8,20 +8,24 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useBMS } from '../context/BMSContext';
 import {
   BatteryGauge,
-  CellVoltageGrid,
   StatCard,
   StatRow,
   ProtectionStatusCard,
   TemperatureList,
+  CustomHeader,
 } from '../components';
 import { useTheme, Theme } from '../theme';
+import { useI18n } from '../i18n';
 
 export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { theme } = useTheme();
+  const { t } = useI18n();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
   
   const {
@@ -36,7 +40,7 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
     savedDeviceName,
   } = useBMS();
 
-  const { basicInfo, cellInfo, protectionDetails } = bmsData;
+  const { basicInfo, protectionDetails } = bmsData;
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   
   // Display name: device name > saved name > fallback
@@ -69,10 +73,10 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
             <ActivityIndicator size="large" color={theme.colors.primary} />
             <View style={styles.pulseRing} />
           </View>
-          <Text style={styles.connectingText}>Connecting to BMS...</Text>
+          <Text style={styles.connectingText}>{t.dashboard.connectingToBMS}</Text>
           <Text style={styles.connectingDeviceName}>{displayName}</Text>
           <Text style={styles.connectingHint}>
-            Please make sure your BMS is powered on and nearby
+            {t.dashboard.connectingHint}
           </Text>
         </View>
       );
@@ -86,10 +90,10 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
             <ActivityIndicator size="large" color={theme.colors.primary} />
             <View style={styles.pulseRing} />
           </View>
-          <Text style={styles.connectingText}>Loading BMS Data...</Text>
+          <Text style={styles.connectingText}>{t.dashboard.loadingBMSData}</Text>
           <Text style={styles.connectingDeviceName}>{displayName}</Text>
           <Text style={styles.connectingHint}>
-            Reading battery information
+            {t.dashboard.readingBatteryInfo}
           </Text>
         </View>
       );
@@ -98,45 +102,43 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="battery-dead-outline" size={64} color={theme.colors.textMuted} />
-        <Text style={styles.emptyText}>No BMS Connected</Text>
+        <Text style={styles.emptyText}>{t.dashboard.noBMSConnected}</Text>
         <Text style={styles.emptySubtext}>
-          Go to Settings to connect to your BMS device
+          {t.dashboard.goToSettings}
         </Text>
         <TouchableOpacity
           style={styles.connectButton}
           onPress={() => navigation.navigate('Settings')}
         >
           <Ionicons name="bluetooth" size={20} color={theme.colors.text} />
-          <Text style={styles.connectButtonText}>Connect BMS</Text>
+          <Text style={styles.connectButtonText}>{t.dashboard.connectBMS}</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={isManualRefreshing}
-          onRefresh={handleRefresh}
-          tintColor={theme.colors.primary}
-          colors={[theme.colors.primary]}
-        />
-      }
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.deviceInfo}>
-          <View style={styles.statusIndicator} />
-          <Text style={styles.deviceName}>{displayName}</Text>
-        </View>
-        <TouchableOpacity onPress={handleRefresh} disabled={isManualRefreshing}>
-          <Ionicons name="refresh" size={24} color={theme.colors.primary} />
-        </TouchableOpacity>
-      </View>
-
+    <View style={styles.screenContainer}>
+      <CustomHeader
+        title={displayName}
+        subtitle={connectionStatus === 'connected' ? t.common.connected : t.common.disconnected}
+        icon="battery-charging"
+        iconColor={theme.colors.primary}
+        rightIcon={isManualRefreshing ? undefined : "refresh"}
+        onRightPress={handleRefresh}
+      />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingBottom: 100 + insets.bottom }]}
+        refreshControl={
+          <RefreshControl
+            refreshing={isManualRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
+      >
       {/* Main Battery Gauge */}
       <View style={styles.gaugeContainer}>
         <BatteryGauge
@@ -150,77 +152,65 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
       {/* Quick Stats */}
       <StatRow>
         <StatCard
-          label="Capacity"
+          label={t.dashboard.capacity}
           value={basicInfo.remainingCapacity.toFixed(1)}
           unit="Ah"
           color={theme.colors.primary}
-          subtitle={`of ${basicInfo.nominalCapacity.toFixed(1)} Ah`}
+          subtitle={t.dashboard.ofCapacity.replace('{{capacity}}', basicInfo.nominalCapacity.toFixed(1))}
         />
         <StatCard
-          label="Power"
+          label={t.dashboard.power}
           value={Math.abs(basicInfo.current * basicInfo.totalVoltage).toFixed(0)}
           unit="W"
           color={basicInfo.current >= 0 ? theme.colors.charging : theme.colors.discharging}
-          subtitle={basicInfo.current >= 0 ? 'Charging' : 'Discharging'}
+          subtitle={basicInfo.current >= 0 ? t.common.charging : t.common.discharging}
         />
       </StatRow>
 
+      {/* Time Estimate - only show when discharging */}
+      {basicInfo.current < -0.1 && (
+        <StatRow>
+          <StatCard
+            label={t.dashboard.timeToEmpty}
+            value={(() => {
+              const hoursRemaining = basicInfo.remainingCapacity / Math.abs(basicInfo.current);
+              if (hoursRemaining > 24) {
+                return `${Math.floor(hoursRemaining / 24)}d ${Math.floor(hoursRemaining % 24)}h`;
+              } else if (hoursRemaining >= 1) {
+                const hours = Math.floor(hoursRemaining);
+                const minutes = Math.round((hoursRemaining - hours) * 60);
+                return `${hours}h ${minutes}m`;
+              } else {
+                return `${Math.round(hoursRemaining * 60)}m`;
+              }
+            })()}
+            color={theme.colors.warning}
+            subtitle={t.dashboard.atCurrentDraw.replace('{{current}}', Math.abs(basicInfo.current).toFixed(1))}
+          />
+          <StatCard
+            label={t.dashboard.energyLeft}
+            value={(basicInfo.remainingCapacity * basicInfo.totalVoltage).toFixed(0)}
+            unit="Wh"
+            color={theme.colors.info}
+            subtitle={t.dashboard.percentRemaining.replace('{{percent}}', String(basicInfo.soc))}
+          />
+        </StatRow>
+      )}
+
       <StatRow>
         <StatCard
-          label="Cycles"
+          label={t.dashboard.cycles}
           value={basicInfo.cycleCount}
           color={theme.colors.info}
         />
         <StatCard
-          label="Cells"
+          label={t.cells.cells}
           value={basicInfo.cellCount}
           unit="S"
           color={theme.colors.secondary}
           subtitle="LiFePO4"
         />
       </StatRow>
-
-      {/* Cell Voltages */}
-      {cellInfo && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Cell Voltages</Text>
-            <View style={styles.cellStats}>
-              <Text style={styles.cellStat}>
-                Δ {(cellInfo.voltageDelta * 1000).toFixed(0)} mV
-              </Text>
-            </View>
-          </View>
-          <View style={styles.card}>
-            <CellVoltageGrid
-              cellVoltages={cellInfo.cellVoltages}
-              balanceStatus={basicInfo.balanceStatus}
-              maxVoltageCell={cellInfo.maxVoltageCell}
-              minVoltageCell={cellInfo.minVoltageCell}
-            />
-            <View style={styles.cellSummary}>
-              <View style={styles.cellSummaryItem}>
-                <Text style={styles.cellSummaryLabel}>Average</Text>
-                <Text style={styles.cellSummaryValue}>
-                  {cellInfo.averageVoltage.toFixed(3)} V
-                </Text>
-              </View>
-              <View style={styles.cellSummaryItem}>
-                <Text style={styles.cellSummaryLabel}>Max</Text>
-                <Text style={[styles.cellSummaryValue, { color: theme.colors.warning }]}>
-                  {cellInfo.maxVoltage.toFixed(3)} V
-                </Text>
-              </View>
-              <View style={styles.cellSummaryItem}>
-                <Text style={styles.cellSummaryLabel}>Min</Text>
-                <Text style={[styles.cellSummaryValue, { color: theme.colors.info }]}>
-                  {cellInfo.minVoltage.toFixed(3)} V
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      )}
 
       {/* Temperature */}
       {basicInfo.temperatures.length > 0 && (
@@ -243,20 +233,25 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
       {/* Last Update */}
       <View style={styles.footer}>
         <Text style={styles.lastUpdate}>
-          Last updated: {bmsData.lastUpdate?.toLocaleTimeString() || 'Never'}
+          {t.dashboard.lastUpdated}: {bmsData.lastUpdate?.toLocaleTimeString() || t.common.never}
         </Text>
         {autoRefreshEnabled && (
           <View style={styles.autoRefreshIndicator}>
             <View style={styles.pulsingDot} />
-            <Text style={styles.autoRefreshText}>Auto-refresh</Text>
+            <Text style={styles.autoRefreshText}>{t.settings.autoRefresh}</Text>
           </View>
         )}
       </View>
     </ScrollView>
+    </View>
   );
 };
 
 const createStyles = (theme: Theme) => StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

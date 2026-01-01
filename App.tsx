@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BMSProvider } from './src/context/BMSContext';
 import { ThemeProvider, useTheme } from './src/theme';
+import { I18nProvider } from './src/i18n';
 import AppNavigator from './src/navigation/AppNavigator';
 
 function AppContent() {
@@ -18,11 +19,13 @@ function AppContent() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <BMSProvider>
-          <AppContent />
-        </BMSProvider>
-      </ThemeProvider>
+      <I18nProvider>
+        <ThemeProvider>
+          <BMSProvider>
+            <AppContent />
+          </BMSProvider>
+        </ThemeProvider>
+      </I18nProvider>
     </SafeAreaProvider>
   );
 }

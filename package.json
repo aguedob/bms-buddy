@@ -1,5 +1,5 @@
 {
-  "name": "battery-meter",
+  "name": "bms-buddy",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {

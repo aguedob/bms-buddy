@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme, Theme } from '../../theme';
+import { useI18n } from '../../i18n';
 
 interface TemperatureGaugeProps {
   temperature: number;
@@ -50,12 +51,13 @@ interface TemperatureListProps {
 
 export const TemperatureList: React.FC<TemperatureListProps> = ({ temperatures }) => {
   const { theme } = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const labels = ['BMS', 'Cell 1', 'Cell 2', 'Cell 3', 'Cell 4', 'Ambient'];
+  const labels = [t.temperature.bms, t.temperature.cell1, t.temperature.cell2, t.temperature.cell3, t.temperature.cell4, t.temperature.ambient];
   
   return (
     <View style={styles.listContainer}>
-      <Text style={styles.sectionTitle}>Temperatures</Text>
+      <Text style={styles.sectionTitle}>{t.temperature.temperatures}</Text>
       <View style={styles.tempGrid}>
         {temperatures.map((temp, index) => (
           <TemperatureGauge
@@ -89,7 +91,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   tempValue: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
+    color: '#FFFFFF',
   },
   label: {
     fontSize: theme.fontSize.xs,
