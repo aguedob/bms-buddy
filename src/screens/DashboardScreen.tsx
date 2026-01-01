@@ -38,6 +38,9 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
 
   const { basicInfo, cellInfo, protectionDetails } = bmsData;
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  
+  // Display name: device name > saved name > fallback
+  const displayName = connectedDevice?.name || savedDeviceName || 'BMS';
 
   useEffect(() => {
     // Enable auto refresh when dashboard is active
@@ -67,7 +70,7 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
             <View style={styles.pulseRing} />
           </View>
           <Text style={styles.connectingText}>Connecting to BMS...</Text>
-          <Text style={styles.connectingDeviceName}>{savedDeviceName}</Text>
+          <Text style={styles.connectingDeviceName}>{displayName}</Text>
           <Text style={styles.connectingHint}>
             Please make sure your BMS is powered on and nearby
           </Text>
@@ -84,7 +87,7 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
             <View style={styles.pulseRing} />
           </View>
           <Text style={styles.connectingText}>Loading BMS Data...</Text>
-          <Text style={styles.connectingDeviceName}>{connectedDevice?.name || savedDeviceName}</Text>
+          <Text style={styles.connectingDeviceName}>{displayName}</Text>
           <Text style={styles.connectingHint}>
             Reading battery information
           </Text>
@@ -127,7 +130,7 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
       <View style={styles.header}>
         <View style={styles.deviceInfo}>
           <View style={styles.statusIndicator} />
-          <Text style={styles.deviceName}>{connectedDevice?.name || 'BMS'}</Text>
+          <Text style={styles.deviceName}>{displayName}</Text>
         </View>
         <TouchableOpacity onPress={handleRefresh} disabled={isManualRefreshing}>
           <Ionicons name="refresh" size={24} color={theme.colors.primary} />

@@ -8,6 +8,10 @@ import {
   ActivityIndicator,
   Alert,
   Switch,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useBMS } from '../context/BMSContext';
@@ -31,9 +35,13 @@ export const SettingsScreen: React.FC = () => {
     autoRefreshInterval,
     setAutoRefresh,
     isAutoReconnecting,
+    writeBMSDeviceName,
   } = useBMS();
 
   const [isScanning, setIsScanning] = useState(false);
+  const [isRenameModalVisible, setIsRenameModalVisible] = useState(false);
+  const [newBatteryName, setNewBatteryName] = useState('');
+  const [isWritingName, setIsWritingName] = useState(false);
 
   const handleScan = useCallback(async () => {
     setIsScanning(true);
@@ -71,6 +79,43 @@ export const SettingsScreen: React.FC = () => {
       ]
     );
   }, [disconnect]);
+
+  const handleOpenRenameModal = useCallback(() => {
+    setNewBatteryName(connectedDevice?.name || '');
+    setIsRenameModalVisible(true);
+  }, [connectedDevice]);
+
+  const handleSaveName = useCallback(async () => {
+    if (!newBatteryName.trim()) {
+      Alert.alert('Invalid Name', 'Please enter a name for the battery.');
+      return;
+    }
+    
+    setIsWritingName(true);
+    try {
+      const success = await writeBMSDeviceName(newBatteryName.trim());
+      if (success) {
+        Alert.alert(
+          'Success',
+          'Battery name updated! You may need to reconnect to see the new name in other apps.',
+          [{ text: 'OK', onPress: () => setIsRenameModalVisible(false) }]
+        );
+      } else {
+        Alert.alert('Failed', 'Could not update name. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while updating the name.');
+    } finally {
+      setIsWritingName(false);
+    }
+  }, [newBatteryName, writeBMSDeviceName]);
+
+  const handleCancelRename = useCallback(() => {
+    setIsRenameModalVisible(false);
+    setNewBatteryName('');
+  }, []);
+
+  const displayName = connectedDevice?.name || 'Unknown BMS';
 
   const renderDeviceItem = (device: ScannedDevice) => {
     const isConnecting = connectionStatus === 'connecting';
@@ -125,7 +170,13 @@ export const SettingsScreen: React.FC = () => {
             <View style={styles.connectedInfo}>
               <Ionicons name="hardware-chip" size={40} color={theme.colors.primary} />
               <View style={styles.connectedDetails}>
-                <Text style={styles.connectedName}>{connectedDevice.name}</Text>
+                <TouchableOpacity 
+                  style={styles.nameContainer}
+                  onPress={handleOpenRenameModal}
+                >
+                  <Text style={styles.connectedName}>{displayName}</Text>
+                  <Ionicons name="pencil" size={16} color={theme.colors.textSecondary} style={styles.editIcon} />
+                </TouchableOpacity>
                 <Text style={styles.connectedId}>{connectedDevice.id}</Text>
               </View>
             </View>
@@ -318,6 +369,69 @@ export const SettingsScreen: React.FC = () => {
           </Text>
         </View>
       </View>
+
+      {/* Rename Modal */}
+      <Modal
+        visible={isRenameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelRename}
+      >
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Rename Battery</Text>
+              <Text style={styles.modalSubtitle}>
+                Enter a name for your battery (max 16 characters for BMS)
+              </Text>
+              <TextInput
+                style={styles.modalInput}
+                value={newBatteryName}
+                onChangeText={setNewBatteryName}
+                placeholder="e.g., Van Battery, Main Pack"
+                placeholderTextColor={theme.colors.textMuted}
+                autoFocus
+                maxLength={16}
+                editable={!isWritingName}
+                returnKeyType="done"
+                onSubmitEditing={handleSaveName}
+              />
+            
+              {isWritingName ? (
+                <View style={styles.writingContainer}>
+                  <ActivityIndicator color={theme.colors.primary} />
+                  <Text style={styles.writingText}>Updating name...</Text>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.modalButtonCancel]}
+                      onPress={handleCancelRename}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.modalButtonCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.modalButtonSave]}
+                      onPress={handleSaveName}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.modalButtonSaveText}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                
+                  <Text style={styles.writeHint}>
+                    This will change the Bluetooth name visible to all apps.
+                  </Text>
+                </>
+              )}
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -379,16 +493,29 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   },
   connectedDetails: {
     marginLeft: theme.spacing.md,
+    flex: 1,
+  },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   connectedName: {
     fontSize: theme.fontSize.lg,
     color: theme.colors.text,
     fontWeight: theme.fontWeight.semibold,
   },
+  editIcon: {
+    marginLeft: theme.spacing.xs,
+  },
   connectedId: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.xs,
+  },
+  originalName: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    marginTop: 2,
   },
   deviceStats: {
     flexDirection: 'row',
@@ -616,6 +743,111 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.md,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: theme.colors.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    width: '100%',
+    maxWidth: 340,
+  },
+  modalTitle: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: theme.spacing.xs,
+    marginBottom: theme.spacing.lg,
+  },
+  modalInput: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.text,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    marginTop: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: theme.colors.surface,
+  },
+  modalButtonSave: {
+    backgroundColor: theme.colors.primary,
+  },
+  modalButtonCancelText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.fontWeight.medium,
+  },
+  modalButtonSaveText: {
+    fontSize: theme.fontSize.md,
+    color: theme.isDark ? theme.colors.text : '#ffffff',
+    fontWeight: theme.fontWeight.medium,
+  },
+  writeToBmsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.md,
+  },
+  writeToBmsText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.medium,
+    marginLeft: theme.spacing.xs,
+  },
+  writeHint: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    marginTop: theme.spacing.md,
+    lineHeight: 16,
+  },
+  writingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.xl,
+  },
+  writingText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textSecondary,
+    marginLeft: theme.spacing.sm,
+  },
+  clearNameButton: {
+    marginTop: theme.spacing.md,
+    alignItems: 'center',
+  },
+  clearNameText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.error,
   },
 });
 

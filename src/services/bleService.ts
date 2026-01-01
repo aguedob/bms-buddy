@@ -454,6 +454,73 @@ class BMSBleService {
   }
 
   /**
+   * Calculate checksum for BMS command
+   * Checksum = 0x10000 - sum of bytes from register to end of data
+   */
+  private calculateChecksum(data: number[]): number {
+    const sum = data.reduce((acc, byte) => acc + byte, 0);
+    return (0x10000 - sum) & 0xFFFF;
+  }
+
+  /**
+   * Calculate BLE module checksum (modulo 256)
+   * This is different from the BMS checksum - it's just the sum mod 256
+   */
+  private calculateBLEModuleChecksum(data: number[]): number {
+    const sum = data.reduce((acc, byte) => acc + byte, 0);
+    return sum % 256;
+  }
+
+  /**
+   * Write BLE module Bluetooth advertising name
+   * This sends a command to the BLE MODULE (not the BMS) to change the advertised name.
+   * Format: FF AA 07 [length] [name bytes] [checksum]
+   * The BMS ignores this command - it's handled entirely by the BLE module.
+   * Reference: https://github.com/FurTrader/OverkillSolarBMS/blob/master/Comm_Protocol_Documentation/BLE%20_bluetooth_protocol.md
+   */
+  async writeDeviceName(name: string): Promise<boolean> {
+    if (!this.writeCharacteristic) {
+      throw new Error('Not connected to BMS');
+    }
+
+    // Limit name length (BLE module limitation)
+    const limitedName = name.slice(0, 16);
+    const nameBytes = Array.from(new TextEncoder().encode(limitedName));
+    const nameLength = nameBytes.length;
+
+    console.log(`Writing BLE module name: "${limitedName}" (${nameLength} bytes)`);
+
+    try {
+      // Build BLE module name change command
+      // Format: FF AA 07 [length] [name bytes] [checksum]
+      // Checksum is modulo 256 of bytes between header and checksum
+      const commandData = [0x07, nameLength, ...nameBytes];
+      const checksum = this.calculateBLEModuleChecksum(commandData);
+
+      const command = [
+        0xFF,           // Header byte 1
+        0xAA,           // Header byte 2
+        0x07,           // Command: change name
+        nameLength,     // Name length
+        ...nameBytes,   // Name data
+        checksum        // Modulo 256 checksum
+      ];
+
+      console.log('Sending BLE module name command:', command.map(b => b.toString(16).padStart(2, '0')).join(' '));
+      await this.sendCommand(command);
+      
+      // Give BLE module time to process
+      await new Promise(r => setTimeout(r, 500));
+      
+      console.log('BLE module name write completed');
+      return true;
+    } catch (error) {
+      console.error('Error writing BLE module name:', error);
+      return false;
+    }
+  }
+
+  /**
    * Disconnect from BMS
    */
   async disconnect(): Promise<void> {

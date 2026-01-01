@@ -21,7 +21,7 @@ export const BMS_COMMANDS = {
   // Read BMS name/version
   READ_VERSION: [0xDD, 0xA5, 0x05, 0x00, 0xFF, 0xFB, 0x77],
   
-  // Enter factory mode (for configuration)
+  // Enter factory mode (for configuration) - password 0x5678
   ENTER_FACTORY_MODE: [0xDD, 0x5A, 0x00, 0x02, 0x56, 0x78, 0xFF, 0x30, 0x77],
   
   // Exit factory mode
@@ -31,6 +31,10 @@ export const BMS_COMMANDS = {
 // Response start/end markers
 export const RESPONSE_START = 0xDD;
 export const RESPONSE_END = 0x77;
+
+// BLE Module command markers (different from BMS commands)
+export const BLE_MODULE_HEADER = [0xFF, 0xAA];
+export const BLE_MODULE_CMD_SET_NAME = 0x07;
 
 // BMS Device name patterns
 export const BMS_NAME_PATTERNS = [

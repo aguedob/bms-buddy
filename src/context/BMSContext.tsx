@@ -34,6 +34,11 @@ interface BMSContextType {
   isAutoReconnecting: boolean;
   savedDeviceName: string | null;
   
+  // Custom battery name
+  customBatteryName: string | null;
+  setBatteryName: (name: string) => Promise<void>;
+  writeBMSDeviceName: (name: string) => Promise<boolean>;
+  
   // Auto refresh state
   autoRefreshEnabled: boolean;
   autoRefreshInterval: number;
@@ -54,6 +59,7 @@ const BMSContext = createContext<BMSContextType | null>(null);
 const STORAGE_KEYS = {
   LAST_DEVICE_ID: '@BMS_LAST_DEVICE_ID',
   LAST_DEVICE_NAME: '@BMS_LAST_DEVICE_NAME',
+  CUSTOM_BATTERY_NAME: '@BMS_CUSTOM_BATTERY_NAME',
 };
 
 export const useBMS = () => {
@@ -81,6 +87,7 @@ export const BMSProvider: React.FC<BMSProviderProps> = ({ children }) => {
   const [isAppActive, setIsAppActive] = useState(true);
   const [isAutoReconnecting, setIsAutoReconnecting] = useState(false);
   const [savedDeviceName, setSavedDeviceName] = useState<string | null>(null);
+  const [customBatteryName, setCustomBatteryName] = useState<string | null>(null);
   const savedDeviceRef = useRef<{ id: string; name: string } | null>(null);
   const autoReconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -88,6 +95,16 @@ export const BMSProvider: React.FC<BMSProviderProps> = ({ children }) => {
   useEffect(() => {
     const initAndReconnect = async () => {
       await bmsService.initialize();
+      
+      // Load custom battery name
+      try {
+        const savedCustomName = await AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_BATTERY_NAME);
+        if (savedCustomName) {
+          setCustomBatteryName(savedCustomName);
+        }
+      } catch (e) {
+        console.log('Failed to load custom battery name:', e);
+      }
       
       // Try to auto-reconnect to last device
       try {
@@ -341,6 +358,41 @@ export const BMSProvider: React.FC<BMSProviderProps> = ({ children }) => {
     }
   }, []);
 
+  const setBatteryName = useCallback(async (name: string) => {
+    const trimmedName = name.trim();
+    setCustomBatteryName(trimmedName || null);
+    try {
+      if (trimmedName) {
+        await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_BATTERY_NAME, trimmedName);
+      } else {
+        await AsyncStorage.removeItem(STORAGE_KEYS.CUSTOM_BATTERY_NAME);
+      }
+    } catch (e) {
+      console.log('Failed to save custom battery name:', e);
+    }
+  }, []);
+
+  const writeBMSDeviceName = useCallback(async (name: string): Promise<boolean> => {
+    if (connectionStatus !== 'connected') {
+      console.log('Cannot write BMS name: not connected');
+      return false;
+    }
+    
+    try {
+      const success = await bmsService.writeDeviceName(name);
+      if (success) {
+        // Update the connected device name locally as well
+        setConnectedDevice(prev => prev ? { ...prev, name } : null);
+        // Also update saved device name for auto-reconnect
+        await AsyncStorage.setItem(STORAGE_KEYS.LAST_DEVICE_NAME, name);
+      }
+      return success;
+    } catch (error) {
+      console.error('Failed to write BMS device name:', error);
+      return false;
+    }
+  }, [connectionStatus]);
+
   const value: BMSContextType = {
     connectionStatus,
     scannedDevices,
@@ -356,6 +408,9 @@ export const BMSProvider: React.FC<BMSProviderProps> = ({ children }) => {
     autoRefreshInterval,
     isAutoReconnecting,
     savedDeviceName,
+    customBatteryName,
+    setBatteryName,
+    writeBMSDeviceName,
   };
 
   return <BMSContext.Provider value={value}>{children}</BMSContext.Provider>;
