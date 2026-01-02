@@ -8,7 +8,9 @@
     "splash": {
       "backgroundColor": "#0d0d0d"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.bmsbuddy.app",
@@ -17,7 +19,8 @@
         "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to connect to your BMS and monitor battery status",
         "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to connect to your BMS and monitor battery status",
         "UIUserInterfaceStyle": "Automatic"
-      }
+      },
+      "appleTeamId": "YV7L95V23Y"
     },
     "android": {
       "adaptiveIcon": {
@@ -37,7 +40,10 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": true,
-          "modes": ["peripheral", "central"],
+          "modes": [
+            "peripheral",
+            "central"
+          ],
           "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to BMS devices"
         }
       ],
